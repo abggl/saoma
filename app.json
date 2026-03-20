@@ -1,0 +1,27 @@
+{
+  "pages": [
+    "pages/scan/scan",
+    "pages/database/database"
+  ],
+  "window": {
+    "defaultTitle": "扫码查重工具",
+    "titleBarColor": "#1677FF",
+    "pullRefresh": false,
+    "allowsBounceVertical": "NO"
+  },
+  "tabBar": {
+    "textColor": "#999999",
+    "selectedColor": "#1677FF",
+    "backgroundColor": "#FFFFFF",
+    "items": [
+      {
+        "pagePath": "pages/scan/scan",
+        "name": "扫码"
+      },
+      {
+        "pagePath": "pages/database/database",
+        "name": "数据库"
+      }
+    ]
+  }
+}

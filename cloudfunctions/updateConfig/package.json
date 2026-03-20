@@ -1,0 +1,7 @@
+{
+  "name": "updateConfig",
+  "version": "1.0.0",
+  "description": "更新配置云函数",
+  "main": "index.js",
+  "dependencies": {}
+}

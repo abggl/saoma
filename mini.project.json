@@ -1,0 +1,11 @@
+{
+  "enableNodeModuleBabelTransform": true,
+  "node_modules_es6_whitelist": [
+    "@alicloud/mpserverless-sdk"
+  ],
+  "projectConfig": {
+    "npm": {
+      "enable": true
+    }
+  }
+}

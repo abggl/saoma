@@ -1,0 +1,301 @@
+<view class="page-container">
+  <!-- 密码验证遮罩 -->
+  <view class="password-mask" a:if="{{!isPasswordVerified}}">
+    <view class="password-box">
+      <view class="password-icon">🔐</view>
+      <view class="password-title">数据库访问验证</view>
+      <view class="password-input-box">
+        <input 
+          class="password-input" 
+          type="password" 
+          placeholder="请输入访问密码"
+          value="{{passwordInput}}"
+          onInput="onPasswordInput"
+          maxlength="20"
+        />
+      </view>
+      <view class="password-hint" a:if="{{passwordError}}">{{passwordError}}</view>
+      <view class="password-hint" a:else>请输入密码以访问数据库</view>
+      <button class="btn-password-confirm" onTap="verifyPassword">确认</button>
+      <button class="btn-password-back" onTap="goBack">返回</button>
+    </view>
+  </view>
+
+  <!-- 加载遮罩 -->
+  <view class="loading-mask" a:if="{{isLoading && isPasswordVerified}}">
+    <view class="loading-content">
+      <view class="loading-spinner"></view>
+      <view class="loading-text">{{loadingText || '加载中...'}}</view>
+    </view>
+  </view>
+
+  <!-- 主内容区域 -->
+  <view class="main-container" a:if="{{isPasswordVerified}}">
+    <!-- 顶部栏 -->
+    <view class="header-bar">
+      <view class="header-title">📊 数据库管理</view>
+      <view class="header-action" onTap="showConfig">⚙️</view>
+    </view>
+
+    <!-- 工具栏 -->
+    <view class="toolbar">
+      <view class="toolbar-btn" onTap="refreshData">
+        <view class="toolbar-icon">🔄</view>
+        <view>刷新</view>
+      </view>
+      <view class="toolbar-btn" onTap="showSort">
+        <view class="toolbar-icon">📑</view>
+        <view>排序</view>
+      </view>
+      <view class="toolbar-btn" onTap="showImport">
+        <view class="toolbar-icon">📥</view>
+        <view>导入</view>
+      </view>
+      <view class="toolbar-btn" onTap="exportToExcel">
+        <view class="toolbar-icon">📤</view>
+        <view>导出</view>
+      </view>
+    </view>
+
+    <!-- 搜索框 -->
+    <view class="search-box">
+      <view class="search-icon">🔍</view>
+      <input 
+        class="search-input" 
+        placeholder="搜索编码或备注..."
+        value="{{searchKeyword}}"
+        onInput="onSearchInput"
+        onConfirm="onSearch"
+      />
+      <view class="search-clear" a:if="{{searchKeyword}}" onTap="clearSearch">✕</view>
+    </view>
+
+    <!-- 筛选标签 -->
+    <view class="filter-tags" a:if="{{searchKeyword}}">
+      <view class="filter-tag">搜索: {{searchKeyword}}</view>
+    </view>
+
+    <!-- 滚动区域 -->
+    <scroll-view class="scroll-container" scroll-y="true" onScrollToLower="loadMore">
+      <view class="container">
+        <!-- 记录列表 -->
+        <view class="list-container">
+          <view class="list-item" a:for="{{records}}" a:key="{{_id}}" onTap="showDetail" data-index="{{index}}">
+            <view class="list-item-header">
+              <view class="list-item-title">{{item.code}}</view>
+              <view class="tag tag-primary" a:if="{{item.images && item.images.length > 0}}">📷 {{item.images.length}}张</view>
+            </view>
+            <view class="list-item-meta">
+              <view class="meta-time">{{item.submitTime}}</view>
+              <view class="meta-divider">|</view>
+              <view class="meta-user" a:if="{{item.submitter}}">{{item.submitter.name}}</view>
+            </view>
+            <view class="list-item-content" a:if="{{item.remark}}">{{item.remark}}</view>
+            <view class="item-images" a:if="{{item.images && item.images.length > 0}}">
+              <image class="item-image" src="{{item.images[0]}}" mode="aspectFill" />
+              <view class="image-count" a:if="{{item.images.length > 1}}">+{{item.images.length - 1}}</view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 加载更多 -->
+        <view class="loading-more" a:if="{{hasMore}}">
+          <view class="loading-spinner"></view>
+          <view>加载更多...</view>
+        </view>
+
+        <!-- 没有更多 -->
+        <view class="no-more" a:if="{{!hasMore && records.length > 0}}">
+          <view>— 没有更多数据了 —</view>
+        </view>
+
+        <!-- 空状态 -->
+        <view class="empty-state" a:if="{{records.length === 0 && !isLoading}}">
+          <view class="empty-icon">📋</view>
+          <view class="empty-text">暂无扫码记录</view>
+          <view class="empty-tip">扫码提交后会在这里显示</view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 底部统计 -->
+    <view class="bottom-stats">
+      <view class="stats-left">共 {{totalCount}} 条记录</view>
+      <view class="stats-right">当前显示 {{records.length}} 条</view>
+    </view>
+  </view>
+
+  <!-- 排序弹窗 -->
+  <view class="modal-mask" a:if="{{showSortModal}}" onTap="hideSort">
+    <view class="modal-content" catchtap="stopPropagation">
+      <view class="modal-header">
+        <view class="modal-title">选择排序方式</view>
+        <view class="modal-close" onTap="hideSort">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="sort-option {{sortOrder === 'time_desc' ? 'active' : ''}}" onTap="selectSort" data-order="time_desc">
+          <view class="sort-info">
+            <view class="sort-name">时间降序</view>
+            <view class="sort-desc">最新提交的在前面</view>
+          </view>
+          <view class="sort-order" a:if="{{sortOrder === 'time_desc'}}">✓</view>
+        </view>
+        <view class="sort-option {{sortOrder === 'time_asc' ? 'active' : ''}}" onTap="selectSort" data-order="time_asc">
+          <view class="sort-info">
+            <view class="sort-name">时间升序</view>
+            <view class="sort-desc">最早提交的在前面</view>
+          </view>
+          <view class="sort-order" a:if="{{sortOrder === 'time_asc'}}">✓</view>
+        </view>
+        <view class="sort-option {{sortOrder === 'code_asc' ? 'active' : ''}}" onTap="selectSort" data-order="code_asc">
+          <view class="sort-info">
+            <view class="sort-name">编码升序</view>
+            <view class="sort-desc">按编码A-Z排序</view>
+          </view>
+          <view class="sort-order" a:if="{{sortOrder === 'code_asc'}}">✓</view>
+        </view>
+        <view class="sort-option {{sortOrder === 'code_desc' ? 'active' : ''}}" onTap="selectSort" data-order="code_desc">
+          <view class="sort-info">
+            <view class="sort-name">编码降序</view>
+            <view class="sort-desc">按编码Z-A排序</view>
+          </view>
+          <view class="sort-order" a:if="{{sortOrder === 'code_desc'}}">✓</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 详情弹窗 -->
+  <view class="modal-mask" a:if="{{showDetailModal}}" onTap="hideDetail">
+    <view class="modal-content detail-modal" catchtap="stopPropagation">
+      <view class="modal-header">
+        <view class="modal-title">记录详情</view>
+        <view class="modal-close" onTap="hideDetail">×</view>
+      </view>
+      <scroll-view class="modal-body" scroll-y="true">
+        <view class="detail-item" a:if="{{currentItem}}">
+          <view class="detail-label">编码</view>
+          <view class="detail-value code">{{currentItem.code}}</view>
+        </view>
+        <view class="detail-item" a:if="{{currentItem.remark}}">
+          <view class="detail-label">备注</view>
+          <view class="detail-value remark">{{currentItem.remark}}</view>
+        </view>
+        <view class="detail-item">
+          <view class="detail-label">提交时间</view>
+          <view class="detail-value">{{currentItem.submitTime}}</view>
+        </view>
+        <view class="detail-item" a:if="{{currentItem.submitter}}">
+          <view class="detail-label">提交人</view>
+          <view class="detail-value">{{currentItem.submitter.name}}</view>
+        </view>
+        <view class="detail-item" a:if="{{currentItem.images && currentItem.images.length > 0}}">
+          <view class="detail-label">图片 ({{currentItem.images.length}}张)</view>
+          <view class="detail-images">
+            <image 
+              class="detail-image" 
+              a:for="{{currentItem.images}}" 
+              a:for-item="img"
+              a:for-index="imgIndex"
+              src="{{img}}" 
+              mode="aspectFill"
+              onTap="previewImage"
+              data-index="{{imgIndex}}"
+            />
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 导入弹窗 -->
+  <view class="modal-mask" a:if="{{showImportModal}}" onTap="hideImport">
+    <view class="modal-content import-modal" catchtap="stopPropagation">
+      <view class="modal-header">
+        <view class="modal-title">导入数据</view>
+        <view class="modal-close" onTap="hideImport">×</view>
+      </view>
+      <scroll-view class="modal-body" scroll-y="true">
+        <view class="import-info">
+          <view class="info-title">导入说明</view>
+          <view class="info-item">• 支持 Excel (.xlsx, .xls) 和 CSV 格式</view>
+          <view class="info-item">• 文件第一行应为表头</view>
+          <view class="info-item">• 必须包含"编码"列</view>
+          <view class="info-item">• 可选列：备注、图片</view>
+        </view>
+        <view class="import-template">
+          <view class="template-title">选择要导入的文件</view>
+          <button class="btn-primary btn-full" onTap="importFromExcel">选择文件</button>
+        </view>
+        <view class="import-result" a:if="{{importResult}}">
+          <view class="result-title">导入结果</view>
+          <view class="result-item success">
+            <view class="result-label">成功导入</view>
+            <view class="result-value">{{importResult.success}} 条</view>
+          </view>
+          <view class="result-item skip" a:if="{{importResult.skip > 0}}">
+            <view class="result-label">跳过（重复）</view>
+            <view class="result-value">{{importResult.skip}} 条</view>
+          </view>
+          <view class="result-item fail" a:if="{{importResult.fail > 0}}">
+            <view class="result-label">导入失败</view>
+            <view class="result-value">{{importResult.fail}} 条</view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 配置弹窗 -->
+  <view class="modal-mask" a:if="{{showConfigModal}}" onTap="hideConfig">
+    <view class="modal-content config-modal" catchtap="stopPropagation">
+      <view class="modal-header">
+        <view class="modal-title">个性化配置</view>
+        <view class="modal-close" onTap="hideConfig">×</view>
+      </view>
+      <scroll-view class="modal-body" scroll-y="true">
+        <view class="form-item">
+          <view class="form-label">扫码页标题</view>
+          <input 
+            class="form-input" 
+            placeholder="请输入标题"
+            value="{{configForm.scanPageTitle}}"
+            onInput="onConfigTitleInput"
+            maxlength="20"
+          />
+        </view>
+        <view class="form-item">
+          <view class="form-label">扫码页描述</view>
+          <input 
+            class="form-input" 
+            placeholder="请输入描述"
+            value="{{configForm.scanPageDesc}}"
+            onInput="onConfigDescInput"
+            maxlength="100"
+          />
+        </view>
+        <view class="form-item">
+          <view class="form-label">背景图片</view>
+          <view class="config-image-section">
+            <image 
+              class="config-image-preview" 
+              a:if="{{configForm.backgroundImage}}" 
+              src="{{configForm.backgroundImage}}" 
+              mode="aspectFill" 
+            />
+            <button class="upload-btn-small" onTap="chooseBackgroundImage">
+              {{configForm.backgroundImage ? '更换图片' : '选择图片'}}
+            </button>
+            <view class="delete-image-btn" a:if="{{configForm.backgroundImage}}" onTap="clearBackgroundImage">
+              删除图片
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="modal-footer">
+        <button class="btn-secondary" onTap="hideConfig">取消</button>
+        <button class="btn-primary" onTap="saveConfig">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

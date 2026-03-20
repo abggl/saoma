@@ -1,0 +1,101 @@
+<view class="page-container" style="{{backgroundImage ? 'background-image: url(' + backgroundImage + '); background-size: cover;' : ''}}">
+  <scroll-view class="scroll-container" scroll-y="true">
+    <view class="container">
+      <!-- 页面标题 -->
+      <view class="page-header">
+        <view class="page-title">{{pageTitle}}</view>
+        <view class="page-desc">{{pageDesc}}</view>
+      </view>
+
+      <!-- 用户信息显示 -->
+      <view class="card" a:if="{{isLoggedIn && userInfo}}">
+        <view class="user-info">
+          <image a:if="{{userInfo.avatar}}" src="{{userInfo.avatar}}" class="user-avatar" mode="aspectFill"></image>
+          <view class="user-name">{{userInfo.name}}</view>
+        </view>
+      </view>
+
+      <!-- 扫码输入区 -->
+      <view class="card">
+        <view class="card-title">商品编码</view>
+        <view class="input-row">
+          <input 
+            class="input-field" 
+            placeholder="请输入或扫描编码"
+            value="{{codeInput}}"
+            onInput="onCodeInput"
+            maxlength="50"
+            type="text"
+          />
+          <button class="btn-small" onTap="startScan">📷 扫码</button>
+        </view>
+        
+        <!-- 查重提示 -->
+        <view class="check-result" a:if="{{codeInput && codeInput.length > 0}}">
+          <view class="check-loading" a:if="{{isChecking}}">
+            <view class="loading-spinner-small"></view>
+            <text>正在查重...</text>
+          </view>
+          <view class="tip-success" a:elif="{{checkResult && !checkResult.exists}}">
+            ✅ 编码可提交
+          </view>
+          <view class="tip-error" a:elif="{{checkResult && checkResult.exists}}">
+            ⚠️ 编码已存在，不可提交
+          </view>
+        </view>
+      </view>
+
+      <!-- 附件区 -->
+      <view class="card">
+        <view class="card-title">附件（最多9张图片）</view>
+        <view class="image-upload-container">
+          <!-- 已上传图片 -->
+          <view class="image-item" a:for="{{images}}" a:key="{{index}}">
+            <image src="{{item}}" mode="aspectFill" onTap="previewImage" data-index="{{index}}"/>
+            <view class="image-delete" catchtap="deleteImage" data-index="{{index}}">×</view>
+          </view>
+          
+          <!-- 上传按钮 -->
+          <view class="upload-btn" onTap="chooseImage" a:if="{{images.length < 9}}">
+            <view class="upload-icon">📷</view>
+            <view class="upload-text">{{images.length === 0 ? '添加图片' : images.length + '/9'}}</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 备注区 -->
+      <view class="card">
+        <view class="card-title">备注</view>
+        <textarea 
+          class="input-textarea" 
+          placeholder="请输入备注信息（可选）"
+          value="{{remark}}"
+          onInput="onRemarkInput"
+          maxlength="500"
+        />
+      </view>
+
+      <!-- 底部占位 -->
+      <view style="height: 140rpx;"></view>
+    </view>
+  </scroll-view>
+
+  <!-- 加载遮罩 -->
+  <view class="loading-mask" a:if="{{isLoading}}">
+    <view class="loading-content">
+      <view class="loading-spinner"></view>
+      <view class="loading-text">{{loadingText || '加载中...'}}</view>
+    </view>
+  </view>
+
+  <!-- 底部提交按钮 -->
+  <view class="bottom-bar">
+    <button 
+      class="btn-primary {{canSubmit ? '' : 'btn-disabled'}}" 
+      onTap="submitForm"
+      disabled="{{!canSubmit || isLoading}}"
+    >
+      {{submitButtonText}}
+    </button>
+  </view>
+</view>

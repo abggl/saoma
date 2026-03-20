@@ -1,0 +1,7 @@
+{
+  "name": "getConfig",
+  "version": "1.0.0",
+  "description": "获取配置云函数",
+  "main": "index.js",
+  "dependencies": {}
+}
