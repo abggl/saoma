@@ -10,16 +10,5 @@
   "routes": [
     { "src": "/", "dest": "/api/index.js" },
     { "src": "/api/(.*)", "dest": "/api/$1" }
-  ],
-  "env": {
-    "SUPABASE_URL": "@supabase_url",
-    "SUPABASE_ANON_KEY": "@supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-    "QINIU_ACCESS_KEY": "@qiniu_access_key",
-    "QINIU_SECRET_KEY": "@qiniu_secret_key",
-    "QINIU_BUCKET": "@qiniu_bucket",
-    "QINIU_DOMAIN": "@qiniu_domain",
-    "DING_APP_KEY": "@ding_app_key",
-    "DING_APP_SECRET": "@ding_app_secret"
-  }
+  ]
 }
